@@ -80,7 +80,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
         <div className="nav-row">
           <div className="dev">
             <p className="developer">
-              Creative story experiment built with three.js & R3F by{" "}
+              OUR story experiment built with three.js & R3F by{" "}
               <a target="_blank" href="https://github.com/SahilK-027">
                 SahilK-027
               </a>
@@ -102,12 +102,12 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
         </div>
         <div className="footer-row">
           <div className="experience-name">
-            <h1 className="neon">The</h1>
-            <h1 className="neon">Neon Christmas</h1>
+            <h1 className="neon">NEO</h1>
+            <h1 className="neon">STORIES</h1>
           </div>
           <div className="enter-button">
-            <button onClick={enterToStory}>Enter</button>
-            <h2>Explore the life of Jesus</h2>
+            <button onClick={enterToStory}>SEE</button>
+            <h2>0</h2>
           </div>
         </div>
 
@@ -121,7 +121,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
           }}
         >
           {/* <Perf position="top-left" /> */}
-          <color attach="background" args={["#121316"]} />
+          <color attach="background" args={["#161612ff"]} />
           <LightingAndEffects
             ambientLightIntensity={sceneConfig.ambientLightIntensity}
             fogColor={sceneConfig.fogColor}

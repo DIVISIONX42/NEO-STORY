@@ -5,7 +5,7 @@ const StoryProgressBar = ({ progressPercentage, onChapterSelect }) => {
   const [currentChapter, setCurrentChapter] = useState(0);
   const [previousProgress, setPreviousProgress] = useState(0);
 
-  const chapters = ["Birth", "Baptism", "Crucifixion", "Ascension", "The End"];
+  const chapters = ["Birth", "Baptism", "Crucifixion", "Ascension", "The End of 0", "Mama MIA"];
 
   useEffect(() => {
     // Check if progressPercentage is valid

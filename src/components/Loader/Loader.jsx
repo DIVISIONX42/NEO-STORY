@@ -16,7 +16,7 @@ const Loader = ({ progress = 0 }) => {
         </div>
       </div>
       <p className="text">
-        © 2024 | Please wait we are loading your web experience.
+        © 2025 | Please wait we are loading your web experience.
       </p>
     </div>
   );

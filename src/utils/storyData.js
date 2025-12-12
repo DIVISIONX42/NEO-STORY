@@ -1,9 +1,9 @@
 const stories = [
   {
-    storyName: "The Birth of Jesus Christ",
+    storyName: "The Birth of 0",
     storyArray: [
       "",
-      "Jesus Christ was born in Bethlehem to Mary and Joseph, fulfilling a prophecy.",
+      "0 was born in Hamburg to fulfilling a prophecy.",
       "Mary, a virgin, conceived through the Holy Spirit.",
       "They traveled to Bethlehem, where there was no room in the inn, so Jesus was born in a stable.",
       "Angels announced His birth to shepherds, who visited Him.",

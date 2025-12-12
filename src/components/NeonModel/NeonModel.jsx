@@ -12,7 +12,7 @@ const NeonModel = ({ modelPath, curveConfigs }) => {
     const configs = {};
     Object.entries(curveConfigs).forEach(([key, config]) => {
       configs[key] = {
-        colorA: config.defaultColorA || "#308bff",
+        colorA: config.defaultColorA || "#c3ff00ff",
         colorB: config.defaultColorB || "#4d35c4",
         intensity: config.defaultIntensity || 2,
       };
