@@ -64,7 +64,7 @@ const App = () => {
     dracoLoader.setDecoderPath("/draco/");
     const gltfLoader = new GLTFLoader(loadingManager);
     gltfLoader.setDRACOLoader(dracoLoader);
-    gltfLoader.load("/models/xMas.glb", () => {});
+    gltfLoader.load("/models/FOX.glb", () => {});
     gltfLoader.load("/models/birth.glb", () => {});
     gltfLoader.load("/models/baptism.glb", () => {});
     gltfLoader.load("/models/crucifixion.glb", () => {});

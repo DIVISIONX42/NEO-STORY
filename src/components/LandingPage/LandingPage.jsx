@@ -9,9 +9,11 @@ import { MemoizedGround as Ground } from "../Ground/Ground";
 import primitivesData from "../../utils/primitivesData";
 import { useSpring, animated } from "@react-spring/web";
 import { Perf } from "r3f-perf";
+import { OrbitControls } from "@react-three/drei";
+
 
 const LandingPage = ({ enterStory, setEnterStory }) => {
-  const [currentModel, setCurrentModel] = useState("xMasModel");
+  const [currentModel, setCurrentModel] = useState("FOXModel");
   const [IsFullScreen, setIsFullScreen] = useState(false);
 
   const sceneConfig = {
@@ -114,12 +116,25 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
         <Canvas
           dpr={[1, Math.min(window.devicePixelRatio, 2)]}
           performance={{ min: 0.8 }}
+            camera={{ position: [0, 1.5, 4], fov: 55 }}
           gl={{
             powerPreference: "high-performance",
             antialias: window.devicePixelRatio <= 1.5,
             alpha: true,
           }}
         >
+<OrbitControls
+  enableDamping
+  dampingFactor={0.08}
+  rotateSpeed={0.45}
+  maxPolarAngle={Math.PI}      // allow full vertical rotation
+  minPolarAngle={0}            // allow flipping under the model
+  enablePan={true}
+  enableZoom={true}
+  minDistance={0.5}            // optional, how close the camera can get
+  maxDistance={15}             // optional, how far camera can go
+/>
+
           {/* <Perf position="top-left" /> */}
           <color attach="background" args={["#161612ff"]} />
           <LightingAndEffects
@@ -133,7 +148,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
             intensity2={sceneConfig.intensity2}
           />
           <group position={[0, -0.7, 0]}>
-            <Parallax startParallax={true}>
+            <Parallax startParallax={false}> {/*true 4 better starterpoint*/}
               <NeonModel
                 modelPath={primitivesData[currentModel].path}
                 curveConfigs={primitivesData[currentModel].shaders}

@@ -1,11 +1,11 @@
 const primitivesData = {
-  xMasModel: {
-    path: "/models/xMas.glb",
+  FOXModel: {
+    path: "/models/FOX.glb",
     shaders: {
       curve1: {
         defaultColorA: "#2957e2",
         defaultColorB: "#8f54eb",
-        defaultIntensity: 3.5,
+        defaultIntensity: 2.5,
       },
       curve2: {
         defaultColorA: "#7cff99",
