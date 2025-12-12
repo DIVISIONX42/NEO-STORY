@@ -136,7 +136,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
 />
 
           {/* <Perf position="top-left" /> */}
-          <color attach="background" args={["#161612ff"]} />
+          <color attach="background" args={["#161612"]} />
           <LightingAndEffects
             ambientLightIntensity={sceneConfig.ambientLightIntensity}
             fogColor={sceneConfig.fogColor}
@@ -153,7 +153,6 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
              <NeonModel
                 modelPath={primitivesData[currentModel].path}
                 curveConfigs={primitivesData[currentModel].shaders}
-                  playAnimation="Idle"
               />
               <Backdrop
                 floor={2}
