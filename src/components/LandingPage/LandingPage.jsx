@@ -149,9 +149,11 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
           />
           <group position={[0, -0.7, 0]}>
             <Parallax startParallax={false}> {/*true 4 better starterpoint*/}
-              <NeonModel
+             
+             <NeonModel
                 modelPath={primitivesData[currentModel].path}
                 curveConfigs={primitivesData[currentModel].shaders}
+                  playAnimation="Idle"
               />
               <Backdrop
                 floor={2}

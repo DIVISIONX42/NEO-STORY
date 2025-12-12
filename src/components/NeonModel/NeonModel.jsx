@@ -1,9 +1,9 @@
-// FULL UPDATED FILE — NO TEXTURE BLENDING — ANIMATION SUPPORT — OUTLINES ALIGNED
-// ✔ Animations working
-// ✔ Outline sizes fixed (no bloated wireframe)
-// ✔ All outlines scale from *vertex normals*, not uniform scale hacks
-// ✔ Shader intact
-// ✔ Material layering correct
+// NeonModel.js — FULL UPDATED FILE
+// ✔ Starter animation
+// ✔ HUD-driven animation switching
+// ✔ Non-hover outlines
+// ✔ Mouse hover only on original mesh
+// ✔ Animation debugging (prints animation names)
 // ---------------------------------------------------------------
 
 import { useGLTF, useAnimations } from "@react-three/drei";
@@ -12,8 +12,6 @@ import { useMemo, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 
 const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
-  const [model, setModel] = useState(null);
-
   const shaderConfigs = useMemo(() => {
     const configs = {};
     Object.entries(curveConfigs).forEach(([key, cfg]) => {
@@ -26,7 +24,9 @@ const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
     return configs;
   }, [curveConfigs]);
 
-  // UNIVERSAL DEFORM SHADER
+  // =============================================================
+  // MAIN DEFORMING VERTEX SHADER (mouse hover effect)
+  // =============================================================
   const vertexShader = `
     uniform vec3 uMouseWorld;
     uniform float uTime;
@@ -51,6 +51,20 @@ const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
     }
   `;
 
+  // =============================================================
+  // OUTLINE VERTEX SHADER (NO DEFORMATION)
+  // =============================================================
+  const outlineVertex = `
+    varying vec3 vPosition;
+    varying float vDistanceToMouse;
+
+    void main() {
+        vPosition = position;
+        vDistanceToMouse = 999.0; // prevents hover glow
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `;
+
   const fragmentShader = `
     uniform vec3 uColor1;
     uniform vec3 uColor2;
@@ -69,7 +83,6 @@ const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
         gl_FragColor = vec4(color, 1.0);
     }
   `;
-//metashader
 
   const createShaderMaterial = (a, b, inten) =>
     new THREE.ShaderMaterial({
@@ -96,12 +109,26 @@ const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
   const { scene, animations } = gltf;
   const anim = useAnimations(animations, scene);
 
-  // PLAY FIRST ANIMATION (if exists)
+  // Debug animation names
   useEffect(() => {
-    if (anim.actions && animations.length > 0) {
-      anim.actions[animations[0].name]?.play();
-    }
+    console.log("Animations in model:", animations.map(a => a.name));
+  }, [animations]);
+
+  // STARTER ANIMATION (first animation in file)
+  useEffect(() => {
+    if (!anim.actions || animations.length === 0) return;
+    const first = animations[0].name;
+    anim.actions[first]?.reset().fadeIn(0.3).play();
   }, [anim, animations]);
+
+  // HUD / external animation trigger
+  useEffect(() => {
+    if (!playAnimation || !anim.actions) return;
+
+    Object.values(anim.actions).forEach(a => a.stop());
+
+    anim.actions[playAnimation]?.reset().fadeIn(0.3).play();
+  }, [playAnimation, anim]);
 
   const { camera, gl } = useThree();
   const mouse = useRef(new THREE.Vector3());
@@ -123,11 +150,9 @@ const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
     return () => gl.domElement.removeEventListener("mousemove", onMove);
   }, [scene, camera, gl]);
 
-  // OUTLINE OFFSET VIA NORMALS — CLEAN & PERFECT
+  // OUTLINE OFFSET VIA NORMALS
   const addOffsetOutline = (child, material, amount) => {
     const geo = child.geometry.clone();
-
-    // push vertices along normals
     const pos = geo.attributes.position;
     const nor = geo.attributes.normal;
 
@@ -153,37 +178,35 @@ const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
     scene.traverse((child) => {
       if (!child.isMesh || child.userData.isOutline) return;
 
-      // match shader by name
       let shader = Object.entries(shaders).find(([key]) =>
         child.name.toLowerCase().includes(key.toLowerCase())
       )?.[1];
       shader = shader || Object.values(shaders)[0];
 
-      // apply main neon shader
+      // MAIN MATERIAL (mouse hover)
       child.material = shader;
       child.material.transparent = true;
       child.material.opacity = 0.1;
 
+      // -----------------------------------------------------------
+      // OUTLINES (NO DEFORM)
+      // -----------------------------------------------------------
 
-      // ==========================
-      //  PERFECTLY ALIGNED OUTLINES
-      // ==========================
-
-      // 1) Wireframe using geometry clone (no scale distortion)
+      // WIREFRAME
       const wireGeo = new THREE.WireframeGeometry(child.geometry.clone());
-      const wireMat = new THREE.LineBasicMaterial({ color: 0xff7aff, transparent: true, opacity: 0.3, depthTest: true });
+      const wireMat = new THREE.LineBasicMaterial({ color: 0xff7aff, transparent: true, opacity: 0.3 });
       const wire = new THREE.LineSegments(wireGeo, wireMat);
       wire.userData.isOutline = true;
       child.add(wire);
 
-      // 2) Rim Outline (push normals 1.5%)
+      // RIM OUTLINE
       addOffsetOutline(
         child,
-        new THREE.MeshBasicMaterial({ color: 0xddaeeb, transparent: true, opacity: .05, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ color: 0xddaeeb, transparent: true, opacity: 0.05, side: THREE.BackSide }),
         0.015
       );
-
-      // 3) Animated Neon Outline (push normals 2.5%)
+console.log(gltf.animations.map(a => a.name));
+      // ANIMATED OUTLINE (no deform)
       const pulseMat = new THREE.ShaderMaterial({
         transparent: true,
         side: THREE.BackSide,
@@ -194,27 +217,21 @@ const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
           uColor2: { value: new THREE.Color(0xaa00ff) },
           uIntensity: { value: 2.0 },
         },
-        vertexShader,
+        vertexShader: outlineVertex,
         fragmentShader: `
           uniform float uTime;
-          uniform vec3 uMouseWorld;
           uniform vec3 uColor1;
           uniform vec3 uColor2;
-          uniform float uIntensity;
-
-          varying vec3 vPosition;
-          varying float vDistanceToMouse;
 
           void main() {
             float pulse = 0.5 + 0.4 * sin(uTime * 4.0);
-            float hover = 1.0 - smoothstep(0.0, 0.8, vDistanceToMouse);
-            vec3 c = mix(uColor1, uColor2, pulse) * (0.5 + hover * 1.2);
+            vec3 c = mix(uColor1, uColor2, pulse);
             gl_FragColor = vec4(c, 1.0);
           }
         `,
       });
 
-      const animatedOutline = addOffsetOutline(child, pulseMat, 0.0175);
+      addOffsetOutline(child, pulseMat, 0.0175);
 
       window.__outlineShaders ??= [];
       window.__outlineShaders.push(pulseMat);
@@ -232,7 +249,6 @@ const NeonModel = ({ modelPath, curveConfigs, playAnimation }) => {
     if (window.__outlineShaders) {
       window.__outlineShaders.forEach((s) => {
         s.uniforms.uTime.value += dt;
-        s.uniforms.uMouseWorld.value = smoothMouse.current;
       });
     }
   });
