@@ -4,17 +4,22 @@ import { Canvas } from "@react-three/fiber";
 import { Backdrop } from "@react-three/drei";
 import LightingAndEffects from "../LightingAndEffects/LightingAndEffects";
 import Parallax from "../Parallax/Parallax";
-import NeonModel from "../NeonModel/NeonModel";
+import NeonModel from "../NeonModel/NeonModel.jsx";
 import { MemoizedGround as Ground } from "../Ground/Ground";
 import primitivesData from "../../utils/primitivesData";
 import { useSpring, animated } from "@react-spring/web";
 import { Perf } from "r3f-perf";
 import { OrbitControls } from "@react-three/drei";
+import GameHUD from "../../components/GameHUD/GameHUD.jsx";
 
 
 const LandingPage = ({ enterStory, setEnterStory }) => {
   const [currentModel, setCurrentModel] = useState("FOXModel");
   const [IsFullScreen, setIsFullScreen] = useState(false);
+
+  // ✅ ADD THIS
+  const [currentAnim, setCurrentAnim] = useState("Idle");
+
 
   const sceneConfig = {
     fogColor: primitivesData[currentModel].fogColor,
@@ -22,7 +27,6 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
     fogFar: 20.3,
     ambientLightIntensity: 1,
     luminanceThreshold1: 0.2,
-    intensity1: 0.3,
     luminanceThreshold2: 0,
     intensity2: 0.2,
     backDropPosition: [0, -0.5, -4.75],
@@ -133,6 +137,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
   enableZoom={true}
   minDistance={0.5}            // optional, how close the camera can get
   maxDistance={15}             // optional, how far camera can go
+  //enableRotate={false}
 />
 
           {/* <Perf position="top-left" /> */}
@@ -153,7 +158,9 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
              <NeonModel
                 modelPath={primitivesData[currentModel].path}
                 curveConfigs={primitivesData[currentModel].shaders}
+                  onAnimChange={setCurrentAnim}
               />
+              
               <Backdrop
                 floor={2}
                 position={sceneConfig.backDropPosition}
@@ -175,6 +182,8 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
             />
           </group>
         </Canvas>
+              <GameHUD currentAnim={currentAnim} />
+
       </div>
     </animated.div>
   );
