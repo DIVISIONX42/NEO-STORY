@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useCallback } from "react";
 import * as THREE from "three";
 import React from "react";
+import { Html } from "@react-three/drei";
 
 const Ground = ({ args = [9, 15], resolution = 512, ...props }) => {
   // Memoize texture loading to prevent unnecessary reloads
