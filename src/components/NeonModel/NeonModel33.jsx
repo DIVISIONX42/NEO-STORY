@@ -150,6 +150,16 @@ export default function NeonModel({ modelPath, onAnimChange }) {
     setCurrentAnim(cfg.end);
   };
 
+  /*BTNS*/
+  useEffect(() => {
+  if (!triggerAnim.current) return;
+
+  const anim = triggerAnim.current;
+  triggerAnim.current = null; // reset after triggering
+  play(anim); // call the play function inside NeonModel
+}, [triggerAnim.current]);
+
+
   /* ---------------- INPUT ---------------- */
   useEffect(() => {
     const down = (e) => {

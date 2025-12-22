@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import "./LandingPage.scss";
 import { Canvas } from "@react-three/fiber";
 import { Backdrop } from "@react-three/drei";
@@ -20,8 +20,6 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
 
   // ✅ ADD THIS
   const [currentAnim, setCurrentAnim] = useState("Idle");
-
-    const modelRef = useRef(); // <-- NEW
 
 
   const sceneConfig = {
@@ -159,7 +157,6 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
             <Parallax startParallax={false}> {/*true 4 better starterpoint*/}
              
              <NeonModel
-               ref={modelRef}
                 modelPath={primitivesData[currentModel].path}
                 curveConfigs={primitivesData[currentModel].shaders}
                   onAnimChange={setCurrentAnim}
@@ -270,22 +267,10 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
           </group>
         </Canvas>
 <GameHUD
-  onMove={(x, y) => direction.current.set(x, 0, y)}
-  onAction={(anim) => (modelRef.current.triggerAnim.current = anim)}
-  currentAnim={currentAnim}
-  allAnims={Object.values(modelRef.current?.actions || {}).map(a => a._clip?.name)} // send all animation names
-  specialAnimsDuration={{
-    Bark: 1.2,
-    Sit: 3.5,
-    Fetch: 2.0,
-    Sneak: 4.0,
-    Jump: 1.0,
-    Run: 1.0,
-    Walk: 1.0,
-    Howl: 2.0,
-    Bite: 1.5,
-    Death: 3.0,
+  onMove={(x, y) => {
+    direction.current.set(x, 0, y); // maps joystick to forward/back/left/right
   }}
+  onAction={(anim) => play(anim)}
 />
 
       </div>

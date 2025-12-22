@@ -1,18 +1,26 @@
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import * as THREE from "three";
 
-export default function NeonModel({ modelPath, onAnimChange }) {
+const NeonModel = forwardRef(({ modelPath, onAnimChange }, ref) => {
   const group = useRef();
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
 
-  /*-----LOOKS-----*/
   const outlinesRef = useRef([]);
+  const triggerAnim = useRef(null); // HUD triggers animation
 
-  /*GHUD*/
-const triggerAnim = useRef(null); // <-- NEW
+useImperativeHandle(ref, () => ({
+  playAnim: (name, hold = false) => {
+    const cfg = specialAnims[name] || { name, mode: "once" };
+    if (cfg.mode === "once") play(cfg.name, 0.25, "once");
+    else playHold(cfg.name);
+  },
+  stopHold: () => stopHold(),
+}));
+
+
 
 
  function applyNeonMaterial(mesh) {
@@ -456,4 +464,6 @@ outlinesRef.current.forEach(({ mesh, type, base }) => {
       <primitive object={scene} />
     </group>
   );
-}
+});
+
+export default NeonModel;
