@@ -10,7 +10,7 @@ import primitivesData from "../../utils/primitivesData";
 import { useSpring, animated } from "@react-spring/web";
 import { Perf } from "r3f-perf";
 import { OrbitControls } from "@react-three/drei";
-import GameHUD from "../../components/GameHUD/GameHUD2.jsx";
+import GameHUD from "../../components/GameHUD/GameHUD0.jsx";
 import { Html } from "@react-three/drei";
 
 
@@ -266,7 +266,12 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
             />
           </group>
         </Canvas>
-              <GameHUD currentAnim={currentAnim} />
+<GameHUD
+  onMove={(x, y) => {
+    direction.current.set(x, 0, y); // maps joystick to forward/back/left/right
+  }}
+  onAction={(anim) => play(anim)}
+/>
 
       </div>
     </animated.div>

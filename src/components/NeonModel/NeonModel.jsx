@@ -8,6 +8,189 @@ export default function NeonModel({ modelPath, onAnimChange }) {
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
 
+  /*-----LOOKS-----*/
+  const outlinesRef = useRef([]);
+
+  /*GHUD*/
+const triggerAnim = useRef(null); // <-- NEW
+
+
+ function applyNeonMaterial(mesh) {
+  const mat = mesh.material.clone();
+
+  mat.emissive = new THREE.Color("#00ffff");
+  mat.emissiveIntensity = 1.4;
+  mat.roughness = 0.2;
+  mat.metalness = 0.8;
+  mat.transparent = true;
+  mat.opacity = 0.85;
+  mat.skinning = true;
+
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = { value: 0 };
+
+    /* ---------- VERTEX ---------- */
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      `
+      #include <common>
+      varying vec3 vWorldPos;
+      `
+    );
+
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <begin_vertex>",
+      `
+      #include <begin_vertex>
+      vec4 worldPos = modelMatrix * vec4(transformed, 1.0);
+      vWorldPos = worldPos.xyz;
+      `
+    );
+
+    /* ---------- FRAGMENT ---------- */
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <common>",
+      `
+      #include <common>
+      uniform float uTime;
+      varying vec3 vWorldPos;
+      `
+    );
+
+shader.fragmentShader = shader.fragmentShader.replace(
+  "#include <emissivemap_fragment>",
+  `
+  float pulse = 0.6 + 0.4 * sin(uTime * 2.0 + vWorldPos.y * 4.0);
+
+  // neon hue cycle
+  float hue = mod(uTime * 0.15 + vWorldPos.y * 0.1, 1.0);
+  vec3 neonColor = vec3(
+    abs(sin(hue * 6.2831)),
+    abs(sin(hue * 6.2831 + 2.094)),
+    abs(sin(hue * 6.2831 + 4.188))
+  );
+
+  totalEmissiveRadiance *= neonColor * pulse;
+  `
+);
+
+
+    mat.userData.shader = shader;
+  };
+
+  return mat;
+}
+
+/*----wireframe----*/
+function addNeonOutlines(scene) {
+  const outlinesRef = [];
+
+  const makeOffsetGeometry = (geo, offset = 0.01) => {
+    const g = geo.clone();
+    const pos = g.attributes.position;
+    const nor = g.attributes.normal;
+    if (!pos || !nor) return g;
+    for (let i = 0; i < pos.count; i++) {
+      pos.setXYZ(
+        i,
+        pos.getX(i) + nor.getX(i) * offset,
+        pos.getY(i) + nor.getY(i) * offset,
+        pos.getZ(i) + nor.getZ(i) * offset
+      );
+    }
+    pos.needsUpdate = true;
+    return g;
+  };
+
+  scene.traverse((child) => {
+    if (!child.isMesh) return;
+
+    const parent = child.parent || scene;
+
+    const smallOffset = 0.012; // rim
+    const neonOffset = 0.018;  // pulsing neon
+    const wireOpacity = 0.22;
+
+    // SkinnedMesh version
+    if (child.isSkinnedMesh) {
+      // Rim
+      const rim = new THREE.SkinnedMesh(
+        makeOffsetGeometry(child.geometry, smallOffset),
+        new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          side: THREE.BackSide,
+          transparent: true,
+          opacity: 0.06,
+        })
+      );
+      rim.userData.isOutline = true;
+      rim.bind(child.skeleton, child.bindMatrix);
+      parent.add(rim);
+      outlinesRef.push({ mesh: rim, type: "rim", base: child });
+
+      // Neon pulsing
+      const neon = new THREE.SkinnedMesh(
+        makeOffsetGeometry(child.geometry, neonOffset),
+        new THREE.MeshBasicMaterial({
+          color: 0xff00ff,
+          side: THREE.BackSide,
+          transparent: true,
+          opacity: 0,
+        })
+      );
+      neon.userData.isOutline = true;
+      neon.bind(child.skeleton, child.bindMatrix);
+      parent.add(neon);
+      outlinesRef.push({ mesh: neon, type: "neon", base: child });
+
+      // Wireframe
+      const wire = new THREE.SkinnedMesh(
+        child.geometry.clone(),
+        new THREE.MeshBasicMaterial({
+          color: 0xff7aff,
+          wireframe: true,
+          transparent: true,
+          opacity: wireOpacity,
+        })
+      );
+      wire.userData.isOutline = true;
+      wire.bind(child.skeleton, child.bindMatrix);
+      parent.add(wire);
+      outlinesRef.push({ mesh: wire, type: "wire", base: child });
+    } else {
+      // Non-skinned mesh
+      const rim = new THREE.Mesh(
+        makeOffsetGeometry(child.geometry, smallOffset),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide, transparent: true, opacity: 0.06 })
+      );
+      rim.userData.isOutline = true;
+      parent.add(rim);
+      outlinesRef.push({ mesh: rim, type: "rim", base: child });
+
+      const neon = new THREE.Mesh(
+        makeOffsetGeometry(child.geometry, neonOffset),
+        new THREE.MeshBasicMaterial({ color: 0xff00ff, side: THREE.BackSide, transparent: true, opacity: 0 })
+      );
+      neon.userData.isOutline = true;
+      parent.add(neon);
+      outlinesRef.push({ mesh: neon, type: "neon", base: child });
+
+      const wire = new THREE.Mesh(
+        child.geometry.clone(),
+        new THREE.MeshBasicMaterial({ color: 0xff7aff, wireframe: true, transparent: true, opacity: wireOpacity })
+      );
+      wire.userData.isOutline = true;
+      parent.add(wire);
+      outlinesRef.push({ mesh: wire, type: "wire", base: child });
+    }
+  });
+
+  return outlinesRef;
+}
+
+
+
+
   /* ---------------- MOVEMENT ---------------- */
   const velocity = useRef(new THREE.Vector3());
   const direction = useRef(new THREE.Vector3());
@@ -185,18 +368,51 @@ export default function NeonModel({ modelPath, onAnimChange }) {
   /* ---------------- INIT ---------------- */
   useEffect(() => {
     if (!scene) return;
-    scene.traverse((m) => {
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = true;
-      }
-    });
+scene.traverse((m) => {
+  if (m.isMesh && m.material) {
+    m.castShadow = true;
+    m.receiveShadow = true;
+    m.material = applyNeonMaterial(m);
+  }
+});
+/*wireframe/outlines add*/
+outlinesRef.current = addNeonOutlines(scene);
+
+
     play("Idle");
     setReady(true);
   }, [scene]);
 
   /* ---------------- LOOP ---------------- */
   useFrame(({ camera }, dt) => {
+
+    /* ---LOOKS---*/
+    scene?.traverse((m) => {
+  const shader = m.material?.userData?.shader;
+  if (shader) shader.uniforms.uTime.value += dt;
+});
+
+const t = performance.now() / 1000;
+
+outlinesRef.current.forEach(({ mesh, type, base }) => {
+  if (!mesh || !base) return;
+
+  if (type === "neon") {
+    // pulsing neon
+    const alpha = 0.3 + 0.6 * Math.abs(Math.sin(t * 3));
+    mesh.material.opacity = alpha;
+    mesh.material.needsUpdate = true;
+  } else if (type === "wire") {
+    // subtle breathing
+    mesh.material.opacity = 0.18 + 0.04 * Math.sin(t * 2);
+  } else if (type === "rim") {
+    // thick rim, different color + opacity
+    mesh.material.color.set(0xffff00); // example: yellow rim
+    mesh.material.opacity = 0.12;      // slightly thicker / more visible
+  }
+});
+
+/*---*/
     if (!ready || !group.current) return;
 
     direction.current.set(0, 0, 0);
@@ -235,28 +451,9 @@ export default function NeonModel({ modelPath, onAnimChange }) {
     else play("Walk");
   });
 
-  useEffect(() => {
-  if (!controlsRef) return;
-
-  controlsRef.current = {
-    playOnce: (name) => play(name, 0.25, "once"),
-    holdStart: (name) => playHold(name),
-    holdEnd: () => stopHold(),
-    move: (dir) => {
-      keys.current = { ...keys.current, ...dir };
-    },
-    stopMove: () => {
-      keys.current = {};
-    },
-  };
-}, [actions]);
-
-
   return (
     <group ref={group} scale={1.8}>
       <primitive object={scene} />
     </group>
   );
 }
-
-export default function NeonModel({ modelPath, onAnimChange, controlsRef }) {
