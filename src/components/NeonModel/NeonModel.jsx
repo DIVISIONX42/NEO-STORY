@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import * as THREE from "three";
 
-const NeonModel = forwardRef(({ modelPath, onAnimChange }, ref) => {
+const NeonModel = forwardRef(({ modelPath, onAnimChange, moveVector }, ref) => {
   const group = useRef();
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, group);
@@ -13,12 +13,13 @@ const NeonModel = forwardRef(({ modelPath, onAnimChange }, ref) => {
 
 useImperativeHandle(ref, () => ({
   playAnim: (name, hold = false) => {
-    const cfg = specialAnims[name] || { name, mode: "once" };
-    if (cfg.mode === "once") play(cfg.name, 0.25, "once");
-    else playHold(cfg.name);
+    // directly call internal play or hold functions
+    if (hold) playHold(name)
+    else play(name, 0.25, "once");
   },
   stopHold: () => stopHold(),
 }));
+
 
 
 
@@ -266,47 +267,50 @@ function addNeonOutlines(scene) {
   };
 
   /* ---------------- HOLD PLAY ---------------- */
-  const playHold = (name) => {
-    if (actionLock.current) return;
-    const cfg = holdAnimations[name];
-    if (!cfg) return;
+ const playHold = (name) => {
+  const state = holdState.current;
+  if (state.active === name && state.phase === "loop") return; // <--- skip restart
 
-    const start = actions?.[cfg.start];
-    const loop = actions?.[cfg.loop];
+  const cfg = holdAnimations[name];
+  if (!cfg) return;
 
-    if (!start || !loop) {
-      loop?.reset().setLoop(THREE.LoopRepeat).fadeIn(0.25).play();
-      holdState.current = { active: name, phase: "loop" };
-      currentAction.current = loop;
-      setCurrentAnim(cfg.loop);
-      return;
-    }
+  const start = actions?.[cfg.start];
+  const loop = actions?.[cfg.loop];
 
-    actionLock.current = true;
-    holdState.current = { active: name, phase: "start" };
+  if (!start || !loop) {
+    loop?.reset().setLoop(THREE.LoopRepeat).fadeIn(0.25).play();
+    holdState.current = { active: name, phase: "loop" };
+    currentAction.current = loop;
+    setCurrentAnim(cfg.loop);
+    return;
+  }
 
-    start
+  actionLock.current = true;
+  holdState.current = { active: name, phase: "start" };
+
+  start
+    .reset()
+    .setLoop(THREE.LoopOnce, 1)
+    .fadeIn(0.25)
+    .play();
+
+  start.clampWhenFinished = true;
+  start.onFinish = () => {
+    actionLock.current = false;
+    holdState.current.phase = "loop";
+    loop
       .reset()
-      .setLoop(THREE.LoopOnce, 1)
+      .setLoop(THREE.LoopRepeat)
       .fadeIn(0.25)
       .play();
-
-    start.clampWhenFinished = true;
-    start.onFinish = () => {
-      actionLock.current = false;
-      holdState.current.phase = "loop";
-      loop
-        .reset()
-        .setLoop(THREE.LoopRepeat)
-        .fadeIn(0.25)
-        .play();
-      currentAction.current = loop;
-      setCurrentAnim(cfg.loop);
-    };
-
-    currentAction.current = start;
-    setCurrentAnim(cfg.start);
+    currentAction.current = loop;
+    setCurrentAnim(cfg.loop);
   };
+
+  currentAction.current = start;
+  setCurrentAnim(cfg.start);
+};
+
 
   const stopHold = () => {
     const state = holdState.current;
@@ -423,26 +427,32 @@ outlinesRef.current.forEach(({ mesh, type, base }) => {
 /*---*/
     if (!ready || !group.current) return;
 
-    direction.current.set(0, 0, 0);
-    const speed = keys.current.ShiftLeft ? 4 : 2;
+direction.current.set(0, 0, 0);
+const speed = keys.current.ShiftLeft ? 4 : 2;
 
-    if (keys.current.KeyW || keys.current.ArrowUp) direction.current.z -= 1;
-    if (keys.current.KeyS || keys.current.ArrowDown) direction.current.z += 1;
-    if (keys.current.KeyA || keys.current.ArrowLeft) direction.current.x -= 1;
-    if (keys.current.KeyD || keys.current.ArrowRight) direction.current.x += 1;
+// Keyboard input
+if (keys.current.KeyW || keys.current.ArrowUp) direction.current.z -= 1;
+if (keys.current.KeyS || keys.current.ArrowDown) direction.current.z += 1;
+if (keys.current.KeyA || keys.current.ArrowLeft) direction.current.x -= 1;
+if (keys.current.KeyD || keys.current.ArrowRight) direction.current.x += 1;
 
-    direction.current.normalize();
-    velocity.current.copy(direction.current).multiplyScalar(speed * dt);
-    group.current.position.add(velocity.current);
+// Joystick input (HUD)
+if (moveVector) {
+  direction.current.x += moveVector.x;
+  direction.current.z += moveVector.y; // note: y is forward/back
+}
 
-    if (direction.current.length() > 0) {
-      const angle = Math.atan2(direction.current.x, direction.current.z);
-      group.current.rotation.y = THREE.MathUtils.lerp(
-        group.current.rotation.y,
-        angle,
-        0.15
-      );
-    }
+if (direction.current.length() > 0) {
+  direction.current.normalize();
+  velocity.current.copy(direction.current).multiplyScalar(speed * dt);
+  group.current.position.add(velocity.current);
+
+  // rotate model toward actual movement direction
+  const angle = Math.atan2(direction.current.x, direction.current.z);
+  group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, angle, 0.15);
+}
+
+
 
     const target = group.current.position;
     camera.position.lerp(

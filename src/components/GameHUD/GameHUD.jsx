@@ -53,7 +53,7 @@ const triggerAnim = (name, hold = false) => {
   ];
 
   return (
-    <div className="hud" style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+<div className="hud" style={{ position: "absolute", inset: 0, pointerEvents: "auto" }}>
       <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", fontSize: 24, color: "#0ff" }}>
         Current: {currentAnim}
       </div>
@@ -80,7 +80,7 @@ const triggerAnim = (name, hold = false) => {
   onMouseUp={() => hold && modelRef.current?.stopHold()}
   onTouchStart={() => modelRef.current?.playAnim(anim, hold)}
   onTouchEnd={() => hold && modelRef.current?.stopHold()}
->
+  >
   {icon}
 </button>
 

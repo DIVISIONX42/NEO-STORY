@@ -12,6 +12,7 @@ import { Perf } from "r3f-perf";
 import { OrbitControls } from "@react-three/drei";
 import GameHUD from "../../components/GameHUD/GameHUD0.jsx";
 import { Html } from "@react-three/drei";
+import TestHUD from "../GameHUD/TestHUD.jsx";
 
 
 const LandingPage = ({ enterStory, setEnterStory }) => {
@@ -270,6 +271,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
           </group>
         </Canvas>
 <GameHUD
+  modelRef={modelRef}
   onMove={(x, y) => direction.current.set(x, 0, y)}
   onAction={(anim) => (modelRef.current.triggerAnim.current = anim)}
   currentAnim={currentAnim}
@@ -287,6 +289,8 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
     Death: 3.0,
   }}
 />
+
+
 
       </div>
     </animated.div>
