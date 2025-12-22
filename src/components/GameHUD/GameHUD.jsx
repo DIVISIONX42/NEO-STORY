@@ -1,4 +1,3 @@
-import "./GameHUD.scss";
 
 export default function GameHUD({ modelRef, currentAnim }) {
   if (!modelRef?.current) return null;

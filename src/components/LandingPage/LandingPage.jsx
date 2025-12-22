@@ -10,7 +10,7 @@ import primitivesData from "../../utils/primitivesData";
 import { useSpring, animated } from "@react-spring/web";
 import { Perf } from "r3f-perf";
 import { OrbitControls } from "@react-three/drei";
-import GameHUD from "../../components/GameHUD/GameHUD.jsx";
+import GameHUD from "../../components/GameHUD/GameHUD2.jsx";
 import { Html } from "@react-three/drei";
 
 
