@@ -83,24 +83,31 @@ export default function GameHUD({ modelRef, currentAnim, specialAnimsDuration, o
     onMove?.({ x: 0, y: 0 });
   };
 
-  const moveDrag = e => {
-    if (!dragging.current) return;
-    const rect = joystickRef.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    let dx = clientX - cx;
-    let dy = clientY - cy;
-    const max = rect.width / 2;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    if (length > max) {
-      dx = (dx / length) * max;
-      dy = (dy / length) * max;
-    }
-    setJoystickPos({ x: dx, y: dy });
-    onMove?.({ x: dx / max, y: -dy / max });
-  };
+const moveDrag = (e) => {
+  if (!dragging.current) return;
+
+  const rect = joystickRef.current.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+  let dx = clientX - cx;
+  let dy = clientY - cy;
+
+  const max = rect.width / 2;
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  if (length > max) {
+    dx = (dx / length) * max;
+    dy = (dy / length) * max;
+  }
+
+  setJoystickPos({ x: dx, y: dy });
+  onMove?.({ x: dx / max, y: -dy / max });
+};
+
 
   // Desktop drag anywhere
   useEffect(() => {
