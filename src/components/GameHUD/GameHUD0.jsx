@@ -154,7 +154,7 @@ const moveDrag = (e) => {
         gap: 12,*/
 
   bottom: "5%",
-  top: "0%",
+  top: "10%",
   right: "5%",
   display: "flex",
   flexDirection: "column",
