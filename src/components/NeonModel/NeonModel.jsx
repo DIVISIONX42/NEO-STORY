@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import * as THREE from "three";
 
+
 const NeonModel = forwardRef(({ modelPath, onAnimChange, moveVector }, ref) => {
   const group = useRef();
   const { scene, animations } = useGLTF(modelPath);
@@ -11,14 +12,24 @@ const NeonModel = forwardRef(({ modelPath, onAnimChange, moveVector }, ref) => {
   const outlinesRef = useRef([]);
   const triggerAnim = useRef(null); // HUD triggers animation
 
+  const hudActive = useRef(false);
+
+  const digit7Hold = useRef(false);
+
+
+
 useImperativeHandle(ref, () => ({
   playAnim: (name, hold = false) => {
-    // directly call internal play or hold functions
-    if (hold) playHold(name)
+    hudActive.current = true;
+    if (hold) playHold(name);
     else play(name, 0.25, "once");
   },
-  stopHold: () => stopHold(),
+  stopHold: () => {
+    hudActive.current = false;
+    stopHold();
+  },
 }));
+
 
 
 
@@ -198,6 +209,42 @@ function addNeonOutlines(scene) {
 }
 
 
+/*sneak*/
+const playDigit7 = () => {
+  const sneakLoop = actions?.["Sneak"];
+  if (!sneakLoop) return;
+
+  // immediately stop other actions
+  forceToLocomotion();
+
+  sneakLoop
+    .reset()
+    .setLoop(THREE.LoopRepeat)
+    .fadeIn(0.1)
+    .play();
+
+  holdState.current.active = "Sneak";
+  holdState.current.phase = "loop";
+  actionLock.current = true;
+  digit7Hold.current = true;
+  currentAction.current = sneakLoop;
+  setCurrentAnim("Sneak");
+};
+
+const playOverlay = (name, speed = 1, pingPong = false) => {
+  const action = actions?.[name];
+  if (!action) return;
+
+  action.reset();
+  action.setLoop(THREE.LoopRepeat, Infinity);
+  action.timeScale = pingPong ? -1 : speed; // pingpong via negative timeScale toggle
+  action.fadeIn(0.15).play();
+
+  currentAction.current = action;
+  setCurrentAnim(name);
+
+  // no actionLock — allows movement
+};
 
 
   /* ---------------- MOVEMENT ---------------- */
@@ -217,12 +264,15 @@ function addNeonOutlines(scene) {
     Sit: {
       start: "Sit_Down",
       loop: "Sit",
-      end: "Sit_Up",
+      end: "Sit",
     },
     Sneak: {
       start: "Sneak_Start",
       loop: "Sneak",
-      end: "Sneak_End",
+    },
+        Fetch: {
+      start: "Fetch_Start",
+      loop: "Fetch",
     },
   };
 
@@ -238,11 +288,12 @@ function addNeonOutlines(scene) {
   };
 
   /* ---------------- PLAY HELPER ---------------- */
-  const play = (name, fade = 0.25, mode = "loop") => {
+const play = (name, fade = 0.25, mode = "loop") => {
+  if (currentAnim === name) return; // ✅ prevents spam restart
     const next = actions?.[name];
-    if (!next || currentAction.current === next) return;
+if (!next) return;
 
-    currentAction.current?.fadeOut(fade);
+    currentAction.current?.fadeOut(0.1);
 
     next
       .reset()
@@ -250,7 +301,7 @@ function addNeonOutlines(scene) {
         mode === "once" ? THREE.LoopOnce : THREE.LoopRepeat,
         Infinity
       )
-      .fadeIn(fade)
+      .fadeIn(.25)
       .play();
 
     next.clampWhenFinished = mode === "once";
@@ -347,24 +398,85 @@ function addNeonOutlines(scene) {
 
   /* ---------------- INPUT ---------------- */
   useEffect(() => {
-    const down = (e) => {
-      if (e.repeat) return;
-      keys.current[e.code] = true;
+const down = (e) => {
+  if (e.repeat) return;
+  keys.current[e.code] = true;
 
-      const anim = specialAnims[e.code];
-      if (!anim) return;
+  const anim = specialAnims[e.code];
+  if (!anim) return;
 
-      if (holdState.current.active && anim.mode === "once") return;
+  if (e.code === "Digit2") {
+  const isMoving = direction.current.length() > 0 || (moveVector && (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05));
 
-      if (anim.mode === "once") {
-        if (!actionLock.current) play(anim.name, 0.25, "once");
-      } else {
-        playHold(anim.name);
-      }
-    };
+  if (isMoving) {
+    // Play Sit overlay while moving
+    playOverlay("Sit", 1, true); 
+  } else {
+    // Optional: fallback to normal hold Sit
+    playHold("Sit");
+  }
+  return;
+}
 
-    const up = (e) => {
-      keys.current[e.code] = false;
+if (e.code === "Digit4") {
+  const isMoving = direction.current.length() > 0 || (moveVector && (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05));
+
+  if (isMoving) {
+    playOverlay("Fetch", 1, true);
+  } else {
+    playHold("Fetch");
+  }
+  return;
+}
+
+
+
+  // ✅ Digit7 special logic
+  if (e.code === "Digit7") {
+    const isMoving = direction.current.length() > 0 ||
+                     (moveVector && (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05));
+    if (!isMoving) return; // only allow while moving
+
+    digit7Hold.current = true;   // mark Digit7 active
+    forceToLocomotion();         // stop any other actions
+    playHold(anim.name);          // play Sneak
+    return;
+  }
+
+  // --- normal hold/once logic for other keys ---
+  if (anim.mode === "once") {
+    if (!actionLock.current) play(anim.name, 0.25, "once");
+  } else {
+    playHold(anim.name);
+  }
+};
+
+
+
+
+const up = (e) => {
+  keys.current[e.code] = false;
+
+if (e.code === "Digit7") {
+  digit7Hold.current = false;
+  holdState.current.active = null;
+  holdState.current.phase = null;
+  actionLock.current = false;
+  play("Idle");
+  return;
+}
+
+if (e.code === "Digit7") {
+  digit7Hold.current = false;
+  holdState.current.active = null;
+  holdState.current.phase = null;
+  actionLock.current = false;
+  play("Idle");
+  return;
+}
+
+
+
       const anim = specialAnims[e.code];
       if (anim?.mode === "hold") stopHold();
     };
@@ -394,9 +506,22 @@ outlinesRef.current = addNeonOutlines(scene);
     play("Idle");
     setReady(true);
   }, [scene]);
+  /*---mobile---*/
+  const hasJoystickInput = moveVector &&
+  (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05);
+
 
   /* ---------------- LOOP ---------------- */
   useFrame(({ camera }, dt) => {
+
+    /*---movement ani stop---*/
+    const hasMovementInput =
+  direction.current.length() > 0 ||
+  (moveVector && (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05));
+
+
+    const wantsToMove = direction.current.length() > 0;
+
 
     /* ---LOOKS---*/
     scene?.traverse((m) => {
@@ -428,30 +553,53 @@ outlinesRef.current.forEach(({ mesh, type, base }) => {
     if (!ready || !group.current) return;
 
 direction.current.set(0, 0, 0);
-const speed = keys.current.ShiftLeft ? 4 : 2;
 
-// Keyboard input
+// keyboard
 if (keys.current.KeyW || keys.current.ArrowUp) direction.current.z -= 1;
 if (keys.current.KeyS || keys.current.ArrowDown) direction.current.z += 1;
 if (keys.current.KeyA || keys.current.ArrowLeft) direction.current.x -= 1;
 if (keys.current.KeyD || keys.current.ArrowRight) direction.current.x += 1;
 
-// Joystick input (HUD)
+// joystick (mobile)
 if (moveVector) {
-  direction.current.x += moveVector.x;
-  direction.current.z += moveVector.y; // note: y is forward/back
+  direction.current.x += moveVector.x * 1.2;
+  direction.current.z += moveVector.y * 1.2;
+}
+
+
+/*const hasMovementInput = direction.current.length() > 0;*/
+const isRunning = keys.current.ShiftLeft || (moveVector && moveVector.run);
+
+const speed = isRunning ? 4 : 2.4;
+
+if (hasMovementInput) {
+const len = direction.current.length();
+if (len > 0.01) {
+  direction.current.normalize();
+  velocity.current.copy(direction.current).multiplyScalar(speed * dt * Math.min(len, 1));
+  group.current.position.add(velocity.current);
+}
+
+  const angle = Math.atan2(direction.current.x, direction.current.z);
+  group.current.rotation.y = THREE.MathUtils.lerp(
+    group.current.rotation.y,
+    angle,
+    0.15
+  );
 }
 
 if (direction.current.length() > 0) {
+const len = direction.current.length();
+if (len > 0.01) {
   direction.current.normalize();
-  velocity.current.copy(direction.current).multiplyScalar(speed * dt);
+  velocity.current.copy(direction.current).multiplyScalar(speed * dt * Math.min(len, 1));
   group.current.position.add(velocity.current);
+}
 
   // rotate model toward actual movement direction
   const angle = Math.atan2(direction.current.x, direction.current.z);
   group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, angle, 0.15);
 }
-
 
 
     const target = group.current.position;
@@ -461,13 +609,72 @@ if (direction.current.length() > 0) {
     );
     camera.lookAt(target);
 
-    if (actionLock.current || holdState.current.active) return;
+// Jump must always be allowed
+if (keys.current.Space) {
+  play("Jump", 0.2, "once");
+  return;
+}
 
-    if (keys.current.Space) play("Jump", 0.2, "once");
-    else if (direction.current.length() === 0) play("Idle");
-    else if (keys.current.ShiftLeft) play("Run");
-    else play("Walk");
+/*ani stop*/
+if (hasMovementInput) {
+  // interrupt holds & once animations immediately
+  if (holdState.current.active || actionLock.current) {
+    forceToLocomotion();
+  }
+}
+
+// --- LOCOMOTION ---
+// Locomotion only if no action or Digit7 not active
+// skip locomotion only if Digit7 is active
+if (!actionLock.current && !holdState.current.active && !digit7Hold.current) {
+  if (!hasMovementInput) play("Idle");
+  else if (isRunning) play("Run", .25);
+  else play("Walk");
+}
+
+
+
+
+
+/*// block locomotion only
+if (actionLock.current || holdState.current.active) return;
+
+if (direction.current.length() === 0) {
+  play("Idle");
+} else if (keys.current.ShiftLeft) {
+  play("Run");
+} else {
+  play("Walk");
+}
+  });*/
+  /*
+// block locomotion only
+if (actionLock.current || holdState.current.active) return;
+
+if (!hudActive.current) {
+  if (direction.current.length() === 0) play("Idle");
+  else if (keys.current.ShiftLeft) play("Run");
+  else play("Walk");
+}*/
   });
+
+  /*stopani*/
+const forceToLocomotion = () => {
+  // HARD reset hold state
+  holdState.current.active = null;
+  holdState.current.phase = null;
+
+  actionLock.current = false;
+
+  // STOP ALL ACTIONS immediately
+  Object.values(actions || {}).forEach((a) => {
+    a.stop();
+  });
+
+  currentAction.current = null;
+};
+
+
 
   return (
     <group ref={group} scale={1.8}>
@@ -477,3 +684,4 @@ if (direction.current.length() > 0) {
 });
 
 export default NeonModel;
+

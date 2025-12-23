@@ -38,6 +38,12 @@ export default function GameHUD({ modelRef, currentAnim, specialAnimsDuration, o
   };
 
   useEffect(() => {
+  document.body.style.touchAction = "none";
+  return () => (document.body.style.touchAction = "auto");
+}, []);
+
+
+  useEffect(() => {
     let raf;
     const tick = () => {
       setActiveButtons(prev => {
@@ -199,6 +205,8 @@ const moveDrag = (e) => {
   ref={joystickRef}
   onMouseDown={startDrag}
   onTouchStart={startDrag}
+  onMouseLeave={() => hold && releaseHold(anim)}
+
   style={{
     position: "absolute",
     bottom: 20,
