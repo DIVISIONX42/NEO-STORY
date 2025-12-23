@@ -277,7 +277,7 @@ const updateLocomotion = (speed) => {
 
 
   /* ---------------- MOVEMENT ---------------- */
-  const velocity = useRef(new THREE.Vector3());
+  
   const direction = useRef(new THREE.Vector3());
   const keys = useRef({});
 
