@@ -148,11 +148,17 @@ const moveDrag = (e) => {
       {/* Buttons */}
       <div style={{
         position: "absolute",
-        bottom: 20,
+  /*      bottom: 20,
         right: 20,
         display: "flex",
         flexDirection: "column",
-        gap: 12,
+        gap: 12,*/
+
+  bottom: "5%",
+  right: "5%",
+  display: "flex",
+  flexDirection: "column",
+  gap: "2vh",
       }}>
         {animButtons.map(({ anim, icon, hold }) => {
           const active = activeButtons[anim];
@@ -201,6 +207,8 @@ const moveDrag = (e) => {
       </div>
 
       {/* Joystick */}
+      // Joystick container
+
 <div
   ref={joystickRef}
   onMouseDown={startDrag}
@@ -209,16 +217,23 @@ const moveDrag = (e) => {
 
   style={{
     position: "absolute",
-    bottom: 20,
+/*    bottom: 20,
     left: 20,
     width: 100,
-    height: 100,
+    height: 100, */
     borderRadius: "50%",
     background: "rgba(0,0,0,0.3)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    touchAction: "none",
+/*    touchAction: "none",*/
+
+  bottom: "5%",
+  left: "5%",
+  width: "15vw",
+  maxWidth: 100,
+  height: "15vw",
+  maxHeight: 100,
   }}
 >
   {/* Outer Circle */}
