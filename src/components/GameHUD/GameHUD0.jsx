@@ -154,7 +154,7 @@ const moveDrag = (e) => {
         gap: 12,*/
 
   bottom: "5%",
-  top: "5%",
+  top: "0%",
   right: "5%",
   display: "flex",
   flexDirection: "column",
@@ -217,7 +217,7 @@ const moveDrag = (e) => {
   onTouchMove={moveDrag}
   style={{
     position: "absolute",
-    bottom: "15%",
+    bottom: "20%",
     left: "7%",
     width: 100,
     height: 100,
