@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import "./LandingPage.scss";
 import { Canvas } from "@react-three/fiber";
+import World from "../World.jsx";
 import { Backdrop } from "@react-three/drei";
 import LightingAndEffects from "../LightingAndEffects/LightingAndEffects";
 import Parallax from "../Parallax/Parallax";
@@ -13,6 +14,8 @@ import { OrbitControls } from "@react-three/drei";
 import GameHUD from "../../components/GameHUD/GameHUD0.jsx";
 import { Html } from "@react-three/drei";
 import TestHUD from "../GameHUD/TestHUD.jsx";
+import * as THREE from "three";
+
 
 
 const LandingPage = ({ enterStory, setEnterStory }) => {
@@ -23,6 +26,9 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
   const [currentAnim, setCurrentAnim] = useState("Idle");
 
     const modelRef = useRef(); // <-- NEW
+
+    const direction = useRef(new THREE.Vector3());
+
 
 
   const sceneConfig = {
@@ -90,18 +96,18 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
         <div className="nav-row">
           <div className="dev">
             <p className="developer">
-              OUR story experiment built with three.js & R3F by{" "}
-              <a target="_blank" href="https://github.com/SahilK-027">
-                SahilK-027
+              OUR STORY RETOLD {" "}
+              <a target="_blank" href="https://github.com/DIVISIONX42">
+                DIVISION X42
               </a>
             </p>
             <div className="credits">
               Music by{" "}
               <a
                 target="_blank"
-                href="https://pixabay.com/users/clavier-music-16027823/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=271857"
+                href="xxx"
               >
-                Clavier-Music
+                BunnyXComputer
               </a>
             </div>
             <p className="headphone-info">
@@ -131,6 +137,8 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
             alpha: true,
           }}
         >
+<World direction={direction} />
+
 <OrbitControls
   enableDamping
   dampingFactor={0.08}
@@ -164,7 +172,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
                 modelPath={primitivesData[currentModel].path}
                 curveConfigs={primitivesData[currentModel].shaders}
                   onAnimChange={setCurrentAnim}
-              />
+              />*/
               
               <Backdrop
                 floor={2}

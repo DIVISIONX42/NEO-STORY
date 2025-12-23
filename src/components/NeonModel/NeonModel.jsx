@@ -19,20 +19,17 @@ const NeonModel = forwardRef(({ modelPath, onAnimChange, moveVector }, ref) => {
 
 
 useImperativeHandle(ref, () => ({
-  playAnim: (name, hold = false) => {
-    hudActive.current = true;
-    if (hold) playHold(name);
-    else play(name, 0.25, "once");
-  },
-  stopHold: () => {
-    hudActive.current = false;
-    stopHold();
-  },
+  playAnim: (name) => {
+    if (name === "Sneak") {
+      digit7Hold.current = !digit7Hold.current;
+      // Force update immediately
+      updateLocomotion(moveVector.length());
+    } else {
+      // Play Bark, Bite, etc.
+      play(name, 0.2, "once");
+    }
+  }
 }));
-
-
-
-
 
 
  function applyNeonMaterial(mesh) {
@@ -140,7 +137,7 @@ function addNeonOutlines(scene) {
           color: 0xffffff,
           side: THREE.BackSide,
           transparent: true,
-          opacity: 0.06,
+          opacity: 1,
         })
       );
       rim.userData.isOutline = true;
@@ -209,24 +206,13 @@ function addNeonOutlines(scene) {
 }
 
 const playDigit2 = () => {
-  const sitLoop = actions?.["Sit"];
-  if (!sitLoop) return;
-
-  // immediately stop other actions
-  forceToLocomotion();
-
-  sneakLoop
-    .reset()
-    .setLoop(THREE.LoopRepeat)
-    .fadeIn(0.1)
-    .play();
-
-  holdState.current.active = "Sit";
-  holdState.current.phase = "loop";
+  if (!actions?.["Sit"]) return;
+  
+  // Use the helper to handle the crossfade correctly
+  play("Sit", 0.2, "loop");
+  
+  holdState.current = { active: "Sit", phase: "loop" };
   actionLock.current = true;
-  digit7Hold.current = true;
-  currentAction.current = sitLoop;
-  setCurrentAnim("Sit");
 };
 
 /*sneak*/
@@ -266,6 +252,24 @@ const playOverlay = (name, speed = 2, pingPong = false) => {
   // no actionLock — allows movement
 };
 
+// Function to handle automatic locomotion changes
+const updateLocomotion = (speed) => {
+  if (actionLock.current) return;
+
+  let target = "Idle";
+  if (speed > 0.1) {
+    // If Sneak toggle is active, walking/running is replaced by Sneak
+    target = digit7Hold.current ? "Sneak" : (speed > 2 ? "Run" : "Walk");
+  } else {
+    // If Sneak is active but we are standing still
+    target = "Idle"; 
+  }
+
+  if (currentAnim !== target) {
+    play(target, 0.3, "loop");
+  }
+};
+
 
   /* ---------------- MOVEMENT ---------------- */
   const velocity = useRef(new THREE.Vector3());
@@ -298,60 +302,73 @@ const holdAnimations = {
     Digit7: { name: "Sneak", mode: "hold" },
   };
 
-  /* ---------------- PLAY HELPER ---------------- */
-const play = (name, fade = 0.25, mode = "loop") => {
-  if (currentAnim === name) return; // ✅ prevents spam restart
-    const next = actions?.[name];
-if (!next) return;
+  /*PLAY HELPER* */
+const play = (name, fade = 0.2, mode = "loop") => {
+  const nextAction = actions?.[name];
+  if (!nextAction) return;
 
-    currentAction.current?.fadeOut(0.1);
+  // If already playing this, don't restart unless it's a 'once' action
+  if (currentAnim === name && nextAction.isRunning() && mode !== "once") return;
 
-    next
-      .reset()
-      .setLoop(
-        mode === "once" ? THREE.LoopOnce : THREE.LoopRepeat,
-        Infinity
-      )
-      .fadeIn(.25)
-      .play();
+  // 1. Fade out everything else to prevent the "Sit" leak
+  Object.values(actions).forEach((action) => {
+    if (action !== nextAction) action.fadeOut(fade);
+  });
 
-    next.clampWhenFinished = mode === "once";
+  // 2. Setup next action
+  nextAction
+    .reset()
+    .setEffectiveWeight(1)
+    .setEffectiveTimeScale(1)
+    .setLoop(mode === "once" ? THREE.LoopOnce : THREE.LoopRepeat)
+    .fadeIn(fade)
+    .play();
 
-    if (mode === "once") {
-      actionLock.current = true;
-      const d = next.getClip().duration * 1000;
-      setTimeout(() => (actionLock.current = false), d - 80);
-    }
+  // 3. Handle 'Once' completion
+  if (mode === "once") {
+    nextAction.clampWhenFinished = true;
+    actionLock.current = true;
+    
+    const onFinished = (e) => {
+      if (e.action === nextAction) {
+        nextAction.getMixer().removeEventListener("finished", onFinished);
+        actionLock.current = false;
+        // Locomotion logic in useFrame will handle the return to Idle/Walk
+      }
+    };
+    nextAction.getMixer().addEventListener("finished", onFinished);
+  }
 
-    currentAction.current = next;
-    setCurrentAnim(name);
-    onAnimChange?.(name);
-  };
+  currentAction.current = nextAction;
+  setCurrentAnim(name);
+  // 🔹 Notify HUD of current animation
+if (onAnimChange) onAnimChange(name);
+};
 
   /* ---------------- HOLD PLAY ---------------- */
 const playHold = (name) => {
   const cfg = holdAnimations[name];
-  if (!cfg) return;
+  if (!cfg || !actions) return;
 
-  const loop = actions?.[cfg.loop];
+  const loop = actions[cfg.loop];
   if (!loop) return;
 
-  // Stop any current action
-  currentAction.current?.fadeOut(0.1);
+  // CRITICAL: If we are already playing this hold animation, DO NOT reset it.
+  if (holdState.current.active === name && currentAnim === cfg.loop) return;
+
+  // Fade out everything else to prevent "Sit" from leaking in
+  Object.values(actions).forEach(a => a.fadeOut(0.2));
+
   loop.reset()
+      .setEffectiveWeight(1)
       .setLoop(THREE.LoopRepeat)
-      .fadeIn(0.25)
+      .fadeIn(0.2)
       .play();
 
   holdState.current = { active: name, phase: "loop" };
   currentAction.current = loop;
   setCurrentAnim(cfg.loop);
 };
-
-
-
-
-
 
   const stopHold = () => {
     const state = holdState.current;
@@ -386,7 +403,28 @@ const playHold = (name) => {
     setCurrentAnim(cfg.end);
     setCurrentAnim(cfg.start);
   };
+  /*---preventsitting--*/
 
+  useEffect(() => {
+  if (actions) {
+    // Stop all GLTF default animations
+    Object.values(actions).forEach(a => a.stop());
+    // Start cleanly in Idle
+    play("Idle", 0, "loop");
+  }
+}, [actions]);
+
+  useEffect(() => {
+  if (actions) {
+    // Stop everything so it doesn't default to Sit or Idle instantly
+    Object.values(actions).forEach((action) => action.stop());
+    // Start with a clean Idle
+    if (actions["Idle"]) {
+      actions["Idle"].play();
+      currentAction.current = actions["Idle"];
+    }
+  }
+}, [actions]);
   /* ---------------- INPUT ---------------- */
   useEffect(() => {
 const down = (e) => {
@@ -402,7 +440,6 @@ if (e.code === "Digit2") {
   else playHold("Sit"); // loop plays immediately, no Sit_Start
   return;
 }
-
 
 if (e.code === "Digit4") {
   const isMoving = direction.current.length() > 0;
@@ -480,9 +517,7 @@ outlinesRef.current = addNeonOutlines(scene);
   direction.current.length() > 0 ||
   (moveVector && (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05));
 
-
     const wantsToMove = direction.current.length() > 0;
-
 
     /* ---LOOKS---*/
     scene?.traverse((m) => {
@@ -590,18 +625,13 @@ if (hasMovementInput) {
 // Only play locomotion if no other animation is active
 if (!actionLock.current && !holdState.current.active && !digit7Hold.current) {
   if (!hasMovementInput) {
-    if (currentAnim !== "Idle") play("Idle");
+    if (currentAnim !== "Idle") play("Idle", 0.25);
   } else if (isRunning) {
     if (currentAnim !== "Run") play("Run", 0.25);
   } else {
-    if (currentAnim !== "Walk") play("Walk");
+    if (currentAnim !== "Walk") play("Walk", .25);
   }
 }
-
-
-
-
-
 
 /*// block locomotion only
 if (actionLock.current || holdState.current.active) return;
@@ -642,7 +672,6 @@ const forceToLocomotion = () => {
 };
 
 
-
   return (
     <group ref={group} scale={1.8}>
       <primitive object={scene} />
@@ -651,4 +680,3 @@ const forceToLocomotion = () => {
 });
 
 export default NeonModel;
-
