@@ -29,7 +29,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
 
     const direction = useRef(new THREE.Vector3());
 
-
+const [moveVector, setMoveVector] = useState({ x: 0, y: 0 });
 
   const sceneConfig = {
     fogColor: primitivesData[currentModel].fogColor,
@@ -175,12 +175,13 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
           <group position={[0, -0.7, 0]}>
             <Parallax startParallax={false}> {/*true 4 better starterpoint*/}
              
-             <NeonModel
-               ref={modelRef}
-                modelPath={primitivesData[currentModel].path}
-                curveConfigs={primitivesData[currentModel].shaders}
-                  onAnimChange={setCurrentAnim}
-              />*/
+<NeonModel
+  ref={modelRef}
+  modelPath={primitivesData[currentModel].path}
+  onAnimChange={setCurrentAnim}
+  moveVector={moveVector}
+/>
+
               
               <Backdrop
                 floor={2}
@@ -206,10 +207,8 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
         </Canvas>
 <GameHUD
   modelRef={modelRef}
-  onMove={(x, y) => direction.current.set(x, 0, y)}
-  onAction={(anim) => (modelRef.current.triggerAnim.current = anim)}
   currentAnim={currentAnim}
-  allAnims={Object.values(modelRef.current?.actions || {}).map(a => a._clip?.name)} // send all animation names
+  onMove={(vec) => setMoveVector(vec)}   // ✅ FIXED
   specialAnimsDuration={{
     Bark: 1.5,
     Sit: 3.5,
@@ -223,8 +222,6 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
     Death: 3.0,
   }}
 />
-
-
 
       </div>
     </animated.div>

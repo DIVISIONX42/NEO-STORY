@@ -120,8 +120,6 @@ const moveDrag = (e) => {
   useEffect(() => {
     const move = e => moveDrag(e);
     const up = e => stopDrag(e);
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
     window.addEventListener("touchmove", move);
     window.addEventListener("touchend", up);
     return () => {
@@ -208,64 +206,43 @@ const moveDrag = (e) => {
       </div>
 
       {/* Joystick */}
-      // Joystick container
-
 <div
   ref={joystickRef}
   onMouseDown={startDrag}
   onTouchStart={startDrag}
-  onMouseLeave={() => hold && releaseHold(anim)}
-
+  onMouseUp={stopDrag}
+  onTouchEnd={stopDrag}
+  onMouseMove={moveDrag}
+  onTouchMove={moveDrag}
   style={{
     position: "absolute",
-/*    bottom: 20,
-    left: 20,
-    width: 100,
-    height: 100, */
-    borderRadius: "50%",
-    background: "rgba(0,0,0,0.3)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-/*    touchAction: "none",*/
-
-  bottom: "5%",
-  left: "5%",
-  width: "15vw",
-  maxWidth: 100,
-  height: "15vw",
-  maxHeight: 100,
-  }}
->
-  {/* Outer Circle */}
-  <div style={{
+    bottom: "5%",
+    left: "5%",
     width: 100,
     height: 100,
     borderRadius: "50%",
-    border: "2px solid #0ff",
-    position: "absolute",
-    top: 0,
-    left: 0,
-  }} />
-  {/* Inner Thumb */}
-  <div style={{
-    width: 50,
-    height: 50,
-    borderRadius: "50%",
-    background: "rgba(0,255,255,0.7)",
-    transform: `translate(${joystickPos.x}px, ${joystickPos.y}px)`
-  }} />
-  {/* Movement Direction Line */}
-  <div style={{
-    position: "absolute",
-    width: 2,
-    height: Math.sqrt(joystickPos.x ** 2 + joystickPos.y ** 2),
-    background: "#0ff",
-    top: "50%",
-    left: "50%",
-    transformOrigin: "top",
-    transform: `translate(-1px, -50%) rotate(${Math.atan2(joystickPos.y, joystickPos.x)}rad)`
-  }} />
+    background: "rgba(0,0,0,0.3)",
+    touchAction: "none",
+  }}
+>
+  <div
+    style={{
+      width: 100,
+      height: 100,
+      borderRadius: "50%",
+      border: "2px solid #0ff",
+      position: "absolute",
+    }}
+  />
+  <div
+    style={{
+      width: 50,
+      height: 50,
+      borderRadius: "50%",
+      background: "rgba(0,255,255,0.7)",
+      transform: `translate(${joystickPos.x}px, ${joystickPos.y}px)`
+    }}
+  />
 </div>
     </div>
   );

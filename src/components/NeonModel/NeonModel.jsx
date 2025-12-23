@@ -551,30 +551,21 @@ outlinesRef.current.forEach(({ mesh, type, base }) => {
 direction.current.set(0, 0, 0);
 
 // keyboard
-if (keys.current.KeyW || keys.current.ArrowUp) direction.current.z -= 1;
-if (keys.current.KeyS || keys.current.ArrowDown) direction.current.z += 1;
-if (keys.current.KeyA || keys.current.ArrowLeft) direction.current.x -= 1;
-if (keys.current.KeyD || keys.current.ArrowRight) direction.current.x += 1;
+if (keys.current.KeyW) direction.current.z -= 1;
+if (keys.current.KeyS) direction.current.z += 1;
+if (keys.current.KeyA) direction.current.x -= 1;
+if (keys.current.KeyD) direction.current.x += 1;
 
 // joystick (mobile)
 if (moveVector) {
-  direction.current.x += moveVector.x * 1.2;
-  direction.current.z += moveVector.y * 1.2;
+  direction.current.x += moveVector.x;
+  direction.current.z += moveVector.y;
 }
 
-
-/*const hasMovementInput = direction.current.length() > 0;*/
-const isRunning = keys.current.ShiftLeft || (moveVector && moveVector.run);
-
-const speed = isRunning ? 4 : 2.4;
-
-if (hasMovementInput) {
 const len = direction.current.length();
-if (len > 0.01) {
+if (len > 0.05) {
   direction.current.normalize();
-  velocity.current.copy(direction.current).multiplyScalar(speed * dt * Math.min(len, 1));
-  group.current.position.add(velocity.current);
-}
+  group.current.position.addScaledVector(direction.current, dt * 2.5);
 
   const angle = Math.atan2(direction.current.x, direction.current.z);
   group.current.rotation.y = THREE.MathUtils.lerp(
