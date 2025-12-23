@@ -277,7 +277,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
   currentAnim={currentAnim}
   allAnims={Object.values(modelRef.current?.actions || {}).map(a => a._clip?.name)} // send all animation names
   specialAnimsDuration={{
-    Bark: 1.2,
+    Bark: 1.5,
     Sit: 3.5,
     Fetch: 2.0,
     Sneak: 4.0,

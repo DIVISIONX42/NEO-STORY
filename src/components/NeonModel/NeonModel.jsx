@@ -208,6 +208,26 @@ function addNeonOutlines(scene) {
   return outlinesRef;
 }
 
+const playDigit2 = () => {
+  const sitLoop = actions?.["Sit"];
+  if (!sitLoop) return;
+
+  // immediately stop other actions
+  forceToLocomotion();
+
+  sneakLoop
+    .reset()
+    .setLoop(THREE.LoopRepeat)
+    .fadeIn(0.1)
+    .play();
+
+  holdState.current.active = "Sit";
+  holdState.current.phase = "loop";
+  actionLock.current = true;
+  digit7Hold.current = true;
+  currentAction.current = sitLoop;
+  setCurrentAnim("Sit");
+};
 
 /*sneak*/
 const playDigit7 = () => {
@@ -231,13 +251,13 @@ const playDigit7 = () => {
   setCurrentAnim("Sneak");
 };
 
-const playOverlay = (name, speed = 1, pingPong = false) => {
+const playOverlay = (name, speed = 2, pingPong = false) => {
   const action = actions?.[name];
   if (!action) return;
 
   action.reset();
   action.setLoop(THREE.LoopRepeat, Infinity);
-  action.timeScale = pingPong ? -1 : speed; // pingpong via negative timeScale toggle
+  action.timeScale = pingPong ? -2 : speed; // pingpong via negative timeScale toggle
   action.fadeIn(0.15).play();
 
   currentAction.current = action;
@@ -260,26 +280,17 @@ const playOverlay = (name, speed = 1, pingPong = false) => {
   const [currentAnim, setCurrentAnim] = useState("Idle");
 
   /* ---------------- HOLD CONFIG ---------------- */
-  const holdAnimations = {
-    Sit: {
-      start: "Sit_Down",
-      loop: "Sit",
-      end: "Sit",
-    },
-    Sneak: {
-      start: "Sneak_Start",
-      loop: "Sneak",
-    },
-        Fetch: {
-      start: "Fetch_Start",
-      loop: "Fetch",
-    },
-  };
+const holdAnimations = {
+  Sit: { loop: "Sit", end: "Idle" },
+  Sneak: { loop: "Sneak", end: "Idle" },
+  Fetch: { loop: "Fetch", end: "Idle" },
+};
+
 
   /* ---------------- SPECIAL KEYS ---------------- */
   const specialAnims = {
     Digit1: { name: "Bark", mode: "once" },
-    Digit2: { name: "Sit", mode: "hold" },
+    Digit2: { name: "Sit", mode: "once" },
     Digit3: { name: "Howl", mode: "once" },
     Digit4: { name: "Fetch", mode: "once" },
     Digit5: { name: "Bite", mode: "once" },
@@ -318,49 +329,28 @@ if (!next) return;
   };
 
   /* ---------------- HOLD PLAY ---------------- */
- const playHold = (name) => {
-  const state = holdState.current;
-  if (state.active === name && state.phase === "loop") return; // <--- skip restart
-
+const playHold = (name) => {
   const cfg = holdAnimations[name];
   if (!cfg) return;
 
-  const start = actions?.[cfg.start];
   const loop = actions?.[cfg.loop];
+  if (!loop) return;
 
-  if (!start || !loop) {
-    loop?.reset().setLoop(THREE.LoopRepeat).fadeIn(0.25).play();
-    holdState.current = { active: name, phase: "loop" };
-    currentAction.current = loop;
-    setCurrentAnim(cfg.loop);
-    return;
-  }
-
-  actionLock.current = true;
-  holdState.current = { active: name, phase: "start" };
-
-  start
-    .reset()
-    .setLoop(THREE.LoopOnce, 1)
-    .fadeIn(0.25)
-    .play();
-
-  start.clampWhenFinished = true;
-  start.onFinish = () => {
-    actionLock.current = false;
-    holdState.current.phase = "loop";
-    loop
-      .reset()
+  // Stop any current action
+  currentAction.current?.fadeOut(0.1);
+  loop.reset()
       .setLoop(THREE.LoopRepeat)
       .fadeIn(0.25)
       .play();
-    currentAction.current = loop;
-    setCurrentAnim(cfg.loop);
-  };
 
-  currentAction.current = start;
-  setCurrentAnim(cfg.start);
+  holdState.current = { active: name, phase: "loop" };
+  currentAction.current = loop;
+  setCurrentAnim(cfg.loop);
 };
+
+
+
+
 
 
   const stopHold = () => {
@@ -377,7 +367,7 @@ if (!next) return;
     }
 
     actionLock.current = true;
-    state.phase = "end";
+    state.phase = "loop";
 
     end
       .reset()
@@ -394,6 +384,7 @@ if (!next) return;
 
     currentAction.current = end;
     setCurrentAnim(cfg.end);
+    setCurrentAnim(cfg.start);
   };
 
   /* ---------------- INPUT ---------------- */
@@ -405,43 +396,27 @@ const down = (e) => {
   const anim = specialAnims[e.code];
   if (!anim) return;
 
-  if (e.code === "Digit2") {
-  const isMoving = direction.current.length() > 0 || (moveVector && (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05));
-
-  if (isMoving) {
-    // Play Sit overlay while moving
-    playOverlay("Sit", 1, true); 
-  } else {
-    // Optional: fallback to normal hold Sit
-    playHold("Sit");
-  }
+if (e.code === "Digit2") {
+  const isMoving = direction.current.length() > 0;
+  if (isMoving) playOverlay("Sit", 1);
+  else playHold("Sit"); // loop plays immediately, no Sit_Start
   return;
 }
+
 
 if (e.code === "Digit4") {
-  const isMoving = direction.current.length() > 0 || (moveVector && (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05));
-
-  if (isMoving) {
-    playOverlay("Fetch", 1, true);
-  } else {
-    playHold("Fetch");
-  }
-  return;
+  const isMoving = direction.current.length() > 0;
+  if (isMoving) playOverlay("Fetch", 1, true);
+  else playHold("Fetch", true); // skip Fetch_Start
 }
 
-
-
-  // ✅ Digit7 special logic
-  if (e.code === "Digit7") {
-    const isMoving = direction.current.length() > 0 ||
-                     (moveVector && (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05));
-    if (!isMoving) return; // only allow while moving
-
-    digit7Hold.current = true;   // mark Digit7 active
-    forceToLocomotion();         // stop any other actions
-    playHold(anim.name);          // play Sneak
-    return;
-  }
+if (e.code === "Digit7") {
+  const isMoving = direction.current.length() > 0;
+  if (!isMoving) return;
+  digit7Hold.current = true;
+  forceToLocomotion();
+  playHold("Sneak", true); // skip Sneak_Start if you want
+}
 
   // --- normal hold/once logic for other keys ---
   if (anim.mode === "once") {
@@ -450,9 +425,6 @@ if (e.code === "Digit4") {
     playHold(anim.name);
   }
 };
-
-
-
 
 const up = (e) => {
   keys.current[e.code] = false;
@@ -465,17 +437,6 @@ if (e.code === "Digit7") {
   play("Idle");
   return;
 }
-
-if (e.code === "Digit7") {
-  digit7Hold.current = false;
-  holdState.current.active = null;
-  holdState.current.phase = null;
-  actionLock.current = false;
-  play("Idle");
-  return;
-}
-
-
 
       const anim = specialAnims[e.code];
       if (anim?.mode === "hold") stopHold();
@@ -626,11 +587,17 @@ if (hasMovementInput) {
 // --- LOCOMOTION ---
 // Locomotion only if no action or Digit7 not active
 // skip locomotion only if Digit7 is active
+// Only play locomotion if no other animation is active
 if (!actionLock.current && !holdState.current.active && !digit7Hold.current) {
-  if (!hasMovementInput) play("Idle");
-  else if (isRunning) play("Run", .25);
-  else play("Walk");
+  if (!hasMovementInput) {
+    if (currentAnim !== "Idle") play("Idle");
+  } else if (isRunning) {
+    if (currentAnim !== "Run") play("Run", 0.25);
+  } else {
+    if (currentAnim !== "Walk") play("Walk");
+  }
 }
+
 
 
 
