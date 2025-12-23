@@ -135,7 +135,7 @@ const moveDrag = (e) => {
       {/* Current Animation */}
       <div style={{
         position: "absolute",
-        top: 10,
+        top: 0,
         left: "50%",
         transform: "translateX(-50%)",
         fontSize: 24,
@@ -154,6 +154,7 @@ const moveDrag = (e) => {
         gap: 12,*/
 
   bottom: "5%",
+  top: "5%",
   right: "5%",
   display: "flex",
   flexDirection: "column",
@@ -216,8 +217,8 @@ const moveDrag = (e) => {
   onTouchMove={moveDrag}
   style={{
     position: "absolute",
-    bottom: "25%",
-    left: "15%",
+    bottom: "15%",
+    left: "7%",
     width: 100,
     height: 100,
     borderRadius: "50%",
