@@ -90,6 +90,7 @@ export default function GameHUD({ modelRef, currentAnim, specialAnimsDuration, o
   };
 
 const moveDrag = (e) => {
+  e.preventDefault();
   if (!dragging.current) return;
 
   const rect = joystickRef.current.getBoundingClientRect();
