@@ -56,7 +56,8 @@ export default function World({ foxRef }) {
           )
       )}
 
-      {/*TEST 3D OUTSIDE*/}
+      {/*
+      {/*TEST 3D OUTSIDE*
 <Html fullscreen style={{ pointerEvents: "none", zIndex: 10 }}>
   <div className="sketchfab-embed-wrapper" style={{ pointerEvents: "auto" }}>
     <iframe
@@ -96,7 +97,7 @@ export default function World({ foxRef }) {
       allowFullScreen
     />
   </div>
-</Html>
+</Html>*/}
        
     </>
   );
