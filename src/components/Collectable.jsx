@@ -9,8 +9,8 @@ export default function Collectable({ position }) {
   const ref = useRef();
   const color = new THREE.Color("#ff6600"); // neon orange
 
-  // Load your Fuschmarkt model
-  const { scene } = useGLTF("/models/Fuschmarkt.glb"); // path to your GLB
+  // Load your Fischmarkt model
+  const { scene } = useGLTF("/models/Fischmarkt.glb"); // path to your GLB
 
   useFrame(({ clock }) => {
     if (ref.current) {
