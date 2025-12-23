@@ -237,6 +237,7 @@ const moveDrag = (e) => {
   />
   <div
     style={{
+      position:"absolute",
       width: 50,
       height: 50,
       borderRadius: "50%",
