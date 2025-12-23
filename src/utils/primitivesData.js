@@ -33,7 +33,7 @@ const primitivesData = {
         defaultColorA: "#2957e2",
         defaultColorB: "#8f54eb",
         defaultIntensity: 2.5,
-      },/*
+      },
       curve2: {
         defaultColorA: "#7cff99",
         defaultColorB: "#02a7a7",
@@ -48,8 +48,8 @@ const primitivesData = {
         defaultColorA: "#ff8465",
         defaultColorB: "#ff529a",
         defaultIntensity: 1.3,
-      },*/
-    },
+      },
+        },
     
     fogColor: "#121316",
   },
