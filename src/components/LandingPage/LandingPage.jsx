@@ -78,6 +78,14 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
   };
 
   return (
+    <div
+  style={{
+    position: "absolute",
+    inset: 0,
+    padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)",
+  }}
+>
+
     <animated.div
       style={{
         position: "absolute",
@@ -302,6 +310,7 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
 
       </div>
     </animated.div>
+    </div>
   );
 };
 
