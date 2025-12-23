@@ -157,7 +157,7 @@ const moveDrag = (e) => {
   right: "5%",
   display: "flex",
   flexDirection: "column",
-  gap: "2vh",
+  gap: "1vh",
       }}>
         {animButtons.map(({ anim, icon, hold }) => {
           const active = activeButtons[anim];
@@ -216,8 +216,8 @@ const moveDrag = (e) => {
   onTouchMove={moveDrag}
   style={{
     position: "absolute",
-    bottom: "5%",
-    left: "5%",
+    bottom: "25%",
+    left: "15%",
     width: 100,
     height: 100,
     borderRadius: "50%",
