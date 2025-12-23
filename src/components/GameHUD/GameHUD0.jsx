@@ -133,7 +133,7 @@ const moveDrag = (e) => {
   return (
     <div style={{ position: "absolute", inset: 0, pointerEvents: "auto", zIndex: 9999 }}>
       {/* Current Animation */}
-      <div className={{ "hud" }} style={{
+      <div className="hud" style={{
         position: "absolute",
         top: "0",
         left: "50%",
