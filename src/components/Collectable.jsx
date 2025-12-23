@@ -58,7 +58,9 @@ export default function Collectable({ position }) {
       </points>
 
       {/* Embedded Model */}
+      <Suspense fallback={null}>
       <primitive object={scene} scale={0.05} position={[0, 0, 0]} />
+    </Suspense>
     </group>
   );
 }
