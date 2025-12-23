@@ -57,28 +57,21 @@ export default function World({ foxRef }) {
       )}
 
       {/*TEST 3D OUTSIDE*/}
-      <Html
-  fullscreen
-  style={{
-    pointerEvents: "auto",
-    zIndex: 10,
-  }}
->
-  <div className="sketchfab-embed-wrapper">
-<iframe
-  title="Shark Tamagotchi Fantasy Environment"
-  src="https://sketchfab.com/models/9e6ab48d001045ee9b94c3e3b33f17cc/embed?autostart=1&transparent=1&ui_background=0&ui_controls=0&ui_infos=0&ui_watermark=0&ui_annotations=0"
-  style={{
-    width: "10vw",
-    height: "10vh",
-    border: "none",
-  }}
-  allow="autoplay; fullscreen; xr-spatial-tracking"
- />
-
+<Html fullscreen style={{ pointerEvents: "none", zIndex: 10 }}>
+  <div className="sketchfab-embed-wrapper" style={{ pointerEvents: "auto" }}>
+    <iframe
+      title="Shark Tamagotchi Fantasy Environment"
+      src="https://sketchfab.com/models/9e6ab48d001045ee9b94c3e3b33f17cc/embed?autostart=1&transparent=1&ui_background=0&ui_controls=0&ui_infos=0&ui_watermark=0&ui_annotations=0"
+      style={{
+        width: "10vw",
+        height: "10vh",
+        border: "none",
+      }}
+      allow="autoplay; fullscreen; xr-spatial-tracking"
+    />
   </div>
 
-    <div
+  <div
     className="lkg-blocks-player"
     style={{
       padding: "138.106% 0 0 0",
@@ -86,43 +79,11 @@ export default function World({ foxRef }) {
       width: "50vw",
       height: "50vh",
       opacity: ".8",
+      pointerEvents: "auto", // <-- only the iframe is interactive
     }}
   >
     <iframe
       src="https://blocks.glass/embed/4955427f-adf7-4ae6-bc20-25be49fa125c"
-      frameBorder="0"
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-      }}
-      allow="autoplay; encrypted-media; xr-spatial-tracking; accelerometer; gyroscope; magnetometer"
-      allowFullScreen
-    />
-  </div>
-</Html>
-<Html
-  fullscreen
-  style={{ pointerEvents: "auto", zIndex: 10 }}
->
-  <div
-    className="lkg-blocks-player"
-    style={{
-      position: "absolute",
-      top: "10%",
-      left: "10%",
-      padding: "1% 0 0 0",
-      position: "relative",
-      width: "50vw",
-      height: "50vh",
-      opacity: ".8",
-      zIndex: 10,
-    }}
-  >
-    <iframe
-      src="https://blocks.glass/embed/22aa01b4-918a-4f67-8fc3-230acc5f76c4"
       frameBorder="0"
       style={{
         position: "absolute",
