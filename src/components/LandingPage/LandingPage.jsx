@@ -195,10 +195,10 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
             </Parallax>
 
 <Html
-  fullscreen
+  /*fullscreen*/
   style={{
-    pointerEvents: "auto",
-    zIndex: 10,
+    pointerEvents: "none",
+    zIndex: 1,
   }}
 >
   <div className="sketchfab-embed-wrapper">
@@ -241,8 +241,8 @@ const LandingPage = ({ enterStory, setEnterStory }) => {
   </div>
 </Html>
 <Html
-  fullscreen
-  style={{ pointerEvents: "auto", zIndex: 10 }}
+  /*fullscreen*/
+  style={{ pointerEvents: "auto", zIndex: 1}}
 >
   <div
     className="lkg-blocks-player"
