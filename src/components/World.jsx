@@ -97,7 +97,7 @@ export default function World({ foxRef }) {
     />
   </div>
 </Html>
-
+       
     </>
   );
 }

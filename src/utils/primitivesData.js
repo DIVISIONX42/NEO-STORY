@@ -23,6 +23,34 @@ const primitivesData = {
         defaultIntensity: 1.3,
       },
     },
+        fogColor: "#3f1752",
+  },
+
+  Fischmarkt: {
+    path: "/models/Fischmarkt.glb",
+    shaders: {
+      curve1: {
+        defaultColorA: "#2957e2",
+        defaultColorB: "#8f54eb",
+        defaultIntensity: 2.5,
+      },/*
+      curve2: {
+        defaultColorA: "#7cff99",
+        defaultColorB: "#02a7a7",
+        defaultIntensity: 1.5,
+      },
+      curve3: {
+        defaultColorA: "#ffffff",
+        defaultColorB: "#fff4b1",
+        defaultIntensity: 1.7,
+      },
+      curve4: {
+        defaultColorA: "#ff8465",
+        defaultColorB: "#ff529a",
+        defaultIntensity: 1.3,
+      },*/
+    },
+    
     fogColor: "#121316",
   },
   birthModel: {
