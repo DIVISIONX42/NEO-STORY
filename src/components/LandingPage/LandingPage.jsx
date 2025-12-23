@@ -151,12 +151,12 @@ const [moveVector, setMoveVector] = useState({ x: 0, y: 0 });
   enableDamping
   dampingFactor={0.08}
   rotateSpeed={0.45}
-  maxPolarAngle={Math.PI}      // allow full vertical rotation
+  maxPolarAngle={false}      // allow full vertical rotation
   minPolarAngle={0}            // allow flipping under the model
   enablePan={true}
   enableZoom={true}
   minDistance={0.5}            // optional, how close the camera can get
-  maxDistance={15}             // optional, how far camera can go
+  maxDistance={25}             // optional, how far camera can go
   //enableRotate={false}
 />
 

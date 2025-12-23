@@ -133,15 +133,15 @@ const moveDrag = (e) => {
   return (
     <div style={{ position: "absolute", inset: 0, pointerEvents: "auto", zIndex: 9999 }}>
       {/* Current Animation */}
-      <div style={{
+      <div className={{ "hud" }} style={{
         position: "absolute",
-        top: 0,
+        top: "0",
         left: "50%",
         transform: "translateX(-50%)",
         fontSize: 24,
         color: "#0ff"
       }}>
-        Current: {currentAnim}
+        🎬: {currentAnim}
       </div>
 
       {/* Buttons */}
@@ -217,7 +217,7 @@ const moveDrag = (e) => {
   onTouchMove={moveDrag}
   style={{
     position: "absolute",
-    bottom: "20%",
+    bottom: "24%",
     left: "7%",
     width: 100,
     height: 100,

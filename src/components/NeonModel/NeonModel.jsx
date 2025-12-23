@@ -16,6 +16,11 @@ const NeonModel = forwardRef(({ modelPath, onAnimChange, moveVector }, ref) => {
 
   const digit7Hold = useRef(false);
 
+const velocity = useRef(new THREE.Vector3());
+const ACCEL = 8;        // acceleration
+const DECEL = 10;       // deceleration
+const WALK_SPEED = 2.2;
+const RUN_SPEED = 4.2;
 
 
 useImperativeHandle(ref, () => ({
@@ -550,16 +555,52 @@ outlinesRef.current.forEach(({ mesh, type, base }) => {
 
 direction.current.set(0, 0, 0);
 
-// keyboard
-if (keys.current.KeyW) direction.current.z -= 1;
-if (keys.current.KeyS) direction.current.z += 1;
-if (keys.current.KeyA) direction.current.x -= 1;
-if (keys.current.KeyD) direction.current.x += 1;
+// ---- KEYBOARD INPUT ----
+if (keys.current.KeyW || keys.current.ArrowUp) direction.current.z -= 1;
+if (keys.current.KeyS || keys.current.ArrowDown) direction.current.z += 1;
+if (keys.current.KeyA || keys.current.ArrowLeft) direction.current.x -= 1;
+if (keys.current.KeyD || keys.current.ArrowRight) direction.current.x += 1;
 
-// joystick (mobile)
+// ---- JOYSTICK INPUT ----
 if (moveVector) {
   direction.current.x += moveVector.x;
   direction.current.z += moveVector.y;
+}
+
+const hasInput = direction.current.length() > 0.05;
+
+const isRunning =
+  keys.current.ShiftLeft ||
+  (moveVector && Math.abs(moveVector.x) + Math.abs(moveVector.y) > 0.75);
+
+const targetSpeed = hasInput
+  ? (isRunning ? RUN_SPEED : WALK_SPEED)
+  : 0;
+
+if (hasInput) direction.current.normalize();
+
+// Desired velocity
+const desiredVelocity = direction.current.multiplyScalar(targetSpeed);
+
+// Smooth acceleration
+velocity.current.lerp(
+  desiredVelocity,
+  hasInput ? ACCEL * dt : DECEL * dt
+);
+
+// Apply movement
+group.current.position.addScaledVector(velocity.current, dt);
+if (velocity.current.length() > 0.1) {
+  const angle = Math.atan2(
+    velocity.current.x,
+    velocity.current.z
+  );
+
+  group.current.rotation.y = THREE.MathUtils.lerp(
+    group.current.rotation.y,
+    angle,
+    0.12
+  );
 }
 
 const len = direction.current.length();
@@ -614,15 +655,18 @@ if (hasMovementInput) {
 // Locomotion only if no action or Digit7 not active
 // skip locomotion only if Digit7 is active
 // Only play locomotion if no other animation is active
-if (!actionLock.current && !holdState.current.active && !digit7Hold.current) {
-  if (!hasMovementInput) {
+if (!actionLock.current && !holdState.current.active) {
+  const speed = velocity.current.length();
+
+  if (speed < 0.1) {
     if (currentAnim !== "Idle") play("Idle", 0.25);
-  } else if (isRunning) {
+  } else if (speed > WALK_SPEED + 0.5) {
     if (currentAnim !== "Run") play("Run", 0.25);
   } else {
-    if (currentAnim !== "Walk") play("Walk", .25);
+    if (currentAnim !== "Walk") play("Walk", 0.25);
   }
 }
+
 
 /*// block locomotion only
 if (actionLock.current || holdState.current.active) return;
