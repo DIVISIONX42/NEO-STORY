@@ -16,11 +16,14 @@ const NeonModel = forwardRef(({ modelPath, onAnimChange, moveVector }, ref) => {
 
   const digit7Hold = useRef(false);
 
-const velocity = useRef(new THREE.Vector3());
-const ACCEL = 8;        // acceleration
-const DECEL = 10;       // deceleration
-const WALK_SPEED = 2.2;
-const RUN_SPEED = 4.2;
+const velocity = useRef(new THREE.Vector3())
+const inputDir = useRef(new THREE.Vector3())
+const grounded = useRef(true)
+
+const MAX_WALK = 1.2
+const MAX_RUN = 3.5
+const ACCEL = 18
+const DAMPING = 10
 
 
 useImperativeHandle(ref, () => ({
@@ -513,6 +516,29 @@ outlinesRef.current = addNeonOutlines(scene);
   const hasJoystickInput = moveVector &&
   (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05);
 
+useFrame((_, delta) => {
+  if (!group.current) return
+
+  const speedInput = Math.min(1, inputDir.current.length())
+  const targetSpeed = THREE.MathUtils.lerp(
+    MAX_WALK,
+    MAX_RUN,
+    speedInput
+  )
+
+  const desired = inputDir.current.clone().multiplyScalar(targetSpeed)
+
+  velocity.current.lerp(desired, 1 - Math.exp(-ACCEL * delta))
+  velocity.current.multiplyScalar(1 - Math.exp(-DAMPING * delta))
+
+  group.current.position.addScaledVector(velocity.current, delta)
+
+  if (velocity.current.lengthSq() > 0.001) {
+    group.current.lookAt(
+      group.current.position.clone().add(velocity.current)
+    )
+  }
+})
 
   /* ---------------- LOOP ---------------- */
   useFrame(({ camera }, dt) => {
@@ -554,6 +580,30 @@ outlinesRef.current.forEach(({ mesh, type, base }) => {
     if (!ready || !group.current) return;
 
 direction.current.set(0, 0, 0);
+
+function getInputVector(joystick, keys) {
+  const x =
+    (keys.current["ArrowRight"] ? 1 : 0) -
+    (keys.current["ArrowLeft"] ? 1 : 0)
+
+  const z =
+    (keys.current["ArrowDown"] ? 1 : 0) -
+    (keys.current["ArrowUp"] ? 1 : 0)
+
+  inputDir.current.set(
+    joystick?.x ?? x,
+    0,
+    joystick?.y ?? z
+  )
+
+  // dead-zone
+  if (inputDir.current.length() < 0.15) {
+    inputDir.current.set(0, 0, 0)
+  }
+
+  inputDir.current.normalize()
+}
+
 
 // ---- KEYBOARD INPUT ----
 if (keys.current.KeyW || keys.current.ArrowUp) direction.current.z -= 1;
@@ -656,16 +706,47 @@ if (hasMovementInput) {
 // skip locomotion only if Digit7 is active
 // Only play locomotion if no other animation is active
 if (!actionLock.current && !holdState.current.active) {
-  const speed = velocity.current.length();
+const speed = velocity.current.length()
 
-  if (speed < 0.1) {
-    if (currentAnim !== "Idle") play("Idle", 0.25);
-  } else if (speed > WALK_SPEED + 0.5) {
-    if (currentAnim !== "Run") play("Run", 0.25);
-  } else {
-    if (currentAnim !== "Walk") play("Walk", 0.25);
-  }
+if (speed < 0.05) {
+  fadeTo("Idle", 0.2)
+} else if (speed < 1.6) {
+  fadeTo("Walk", 0.2)
+} else {
+  fadeTo("Run", 0.2)
 }
+}
+
+function fadeTo(name, duration) {
+  if (activeAction.current?.getClip().name === name) return
+
+  const next = actions[name]
+  activeAction.current?.fadeOut(duration)
+  next.reset().fadeIn(duration).play()
+  activeAction.current = next
+}
+const stepTimer = useRef(0)
+
+stepTimer.current += delta * speed
+
+if (stepTimer.current > 0.6 && speed > 0.4) {
+  playFootstep()
+  stepTimer.current = 0
+}
+if (!grounded.current) {
+  velocity.current.y -= 9.8 * delta
+} else {
+  velocity.current.y = 0
+}
+const camTarget = group.current.position.clone()
+camTarget.y += 1.6
+
+camera.position.lerp(
+  camTarget.clone().add(new THREE.Vector3(0, 2, 4)),
+  1 - Math.exp(-4 * delta)
+)
+
+camera.lookAt(camTarget)
 
 
 /*// block locomotion only
