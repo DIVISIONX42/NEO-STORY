@@ -25,6 +25,8 @@ const MAX_RUN = 3.5
 const ACCEL = 18
 const DAMPING = 10
 
+const activeAction = useRef(null)
+
 
 useImperativeHandle(ref, () => ({
   playAnim: (name) => {
@@ -516,29 +518,6 @@ outlinesRef.current = addNeonOutlines(scene);
   const hasJoystickInput = moveVector &&
   (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05);
 
-useFrame((_, delta) => {
-  if (!group.current) return
-
-  const speedInput = Math.min(1, inputDir.current.length())
-  const targetSpeed = THREE.MathUtils.lerp(
-    MAX_WALK,
-    MAX_RUN,
-    speedInput
-  )
-
-  const desired = inputDir.current.clone().multiplyScalar(targetSpeed)
-
-  velocity.current.lerp(desired, 1 - Math.exp(-ACCEL * delta))
-  velocity.current.multiplyScalar(1 - Math.exp(-DAMPING * delta))
-
-  group.current.position.addScaledVector(velocity.current, delta)
-
-  if (velocity.current.lengthSq() > 0.001) {
-    group.current.lookAt(
-      group.current.position.clone().add(velocity.current)
-    )
-  }
-})
 
   /* ---------------- LOOP ---------------- */
   useFrame(({ camera }, dt) => {
@@ -579,7 +558,6 @@ outlinesRef.current.forEach(({ mesh, type, base }) => {
 /*---*/
     if (!ready || !group.current) return;
 
-direction.current.set(0, 0, 0);
 
 function getInputVector(joystick, keys) {
   const x =
@@ -604,6 +582,8 @@ function getInputVector(joystick, keys) {
   inputDir.current.normalize()
 }
 
+// --- INPUT VECTOR ---
+inputDir.current.set(0, 0, 0)
 
 // ---- KEYBOARD INPUT ----
 if (keys.current.KeyW || keys.current.ArrowUp) direction.current.z -= 1;
@@ -623,35 +603,30 @@ const isRunning =
   keys.current.ShiftLeft ||
   (moveVector && Math.abs(moveVector.x) + Math.abs(moveVector.y) > 0.75);
 
-const targetSpeed = hasInput
-  ? (isRunning ? RUN_SPEED : WALK_SPEED)
-  : 0;
+const speedInput = inputDir.current.length()
+const targetSpeed = digit7Hold.current
+  ? 0.8
+  : speedInput > 0.6 ? MAX_RUN : MAX_WALK
 
-if (hasInput) direction.current.normalize();
+const desired = inputDir.current.clone().multiplyScalar(targetSpeed)
 
-// Desired velocity
-const desiredVelocity = direction.current.multiplyScalar(targetSpeed);
+velocity.current.lerp(desired, 1 - Math.exp(-ACCEL * dt))
+velocity.current.multiplyScalar(1 - Math.exp(-DAMPING * dt))
 
-// Smooth acceleration
-velocity.current.lerp(
-  desiredVelocity,
-  hasInput ? ACCEL * dt : DECEL * dt
-);
+group.current.position.addScaledVector(velocity.current, dt)
 
-// Apply movement
-group.current.position.addScaledVector(velocity.current, dt);
-if (velocity.current.length() > 0.1) {
+if (velocity.current.lengthSq() > 0.0001) {
   const angle = Math.atan2(
     velocity.current.x,
     velocity.current.z
-  );
-
+  )
   group.current.rotation.y = THREE.MathUtils.lerp(
     group.current.rotation.y,
     angle,
-    0.12
-  );
+    0.15
+  )
 }
+
 
 const len = direction.current.length();
 if (len > 0.05) {
@@ -706,25 +681,22 @@ if (hasMovementInput) {
 // skip locomotion only if Digit7 is active
 // Only play locomotion if no other animation is active
 if (!actionLock.current && !holdState.current.active) {
-const speed = velocity.current.length()
+  const speed = velocity.current.length()
 
-if (speed < 0.05) {
-  fadeTo("Idle", 0.2)
-} else if (speed < 1.6) {
-  fadeTo("Walk", 0.2)
-} else {
-  fadeTo("Run", 0.2)
-}
+  let target = "Idle"
+  if (speed > 0.1) target = speed > 1.6 ? "Run" : "Walk"
+
+  if (currentAnim !== target) {
+    const next = actions[target]
+    if (next) {
+      activeAction.current?.fadeOut(0.2)
+      next.reset().fadeIn(0.2).play()
+      activeAction.current = next
+      setCurrentAnim(target)
+    }
+  }
 }
 
-function fadeTo(name, duration) {
-  if (activeAction.current?.getClip().name === name) return
-
-  const next = actions[name]
-  activeAction.current?.fadeOut(duration)
-  next.reset().fadeIn(duration).play()
-  activeAction.current = next
-}
 const stepTimer = useRef(0)
 
 stepTimer.current += delta * speed
